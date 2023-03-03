@@ -41,7 +41,7 @@ variable "ssh_password" {
 
 variable "ssh_username" {
   type    = string
-  default = "root"
+  default = "ubuntu"
 }
 
 variable "ssh_ubuntu_password" {

@@ -1,4 +1,4 @@
-PACKER ?= packer
+PACKER ?= /home/joe/workspace/bin/packer
 
 .PHONY: all clean
 

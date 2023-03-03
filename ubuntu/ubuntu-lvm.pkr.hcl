@@ -1,14 +1,28 @@
 source "qemu" "lvm" {
-  boot_command    = ["<wait>e<wait5>", "<down><wait><down><wait><down><wait2><end><wait5>", "<bs><bs><bs><bs><wait>autoinstall ---<wait><f10>"]
+  boot_command    = [
+                    "<wait30>",
+                    "<enter><wait5>", # Select English language
+                    "<enter><wait5>", # Don't worry about updating the Subiquity installer
+                    "<enter><wait5>", # Default keyboard layout
+                    "<enter><wait5>", # Default network settings
+                    "<enter><wait5>", # Proxy settings
+                    "<enter><wait5>", # Mirror address
+                    "<down><down><down><down><down><enter><wait5>", #storage layout
+                    "<enter><wait5>", # File System Summary
+                    "<down><enter><wait5>", # Confirm destructive action (aka install the OS)
+                    "${var.ssh_username}<down>joebot01<down>${var.ssh_username}<down>${var.ssh_password}<down>${var.ssh_password}<down><enter><wait5>", # setup account
+                    "<enter><tab><tab><enter><wait5>", # Enable OpenSSH
+                    "<tab><enter><wait5>", # don't install any dang snaps
+                    ]
   boot_wait       = "2s"
   cpus            = 2
-  disk_size       = "8G"
+  disk_size       = "24G"
   format          = "raw"
   headless        = var.headless
   http_directory  = var.http_directory
-  iso_checksum    = "file:http://releases.ubuntu.com/jammy/SHA256SUMS"
+  iso_checksum    = "file:http://releases.ubuntu.com/bionic/SHA256SUMS"
   iso_target_path = "packer_cache/ubuntu.iso"
-  iso_url         = "https://releases.ubuntu.com/jammy/ubuntu-22.04.1-live-server-amd64.iso"
+  iso_url         = "https://releases.ubuntu.com/bionic/ubuntu-18.04.6-live-server-amd64.iso"
   memory          = 2048
   qemuargs = [
     ["-vga", "qxl"],
@@ -42,6 +56,11 @@ build {
     execute_command   = "echo 'ubuntu' | {{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
     expect_disconnect = true
     scripts           = ["${path.root}/scripts/curtin.sh", "${path.root}/scripts/networking.sh", "${path.root}/scripts/cleanup.sh"]
+  }
+
+  provisioner "file" {
+    destination = "/home/ubuntu/src"
+    source = "/home/joe/src/sw"
   }
 
   post-processor "compress" {
