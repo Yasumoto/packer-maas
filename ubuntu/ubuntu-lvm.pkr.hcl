@@ -1,7 +1,6 @@
 source "qemu" "lvm" {
   boot_command    = [
                     "<wait30>",
-                    "<enter><wait5>", # Select English language
                     "<enter><wait5>", # Don't worry about updating the Subiquity installer
                     "<enter><wait5>", # Default keyboard layout
                     "<enter><wait5>", # Default network settings
@@ -13,6 +12,20 @@ source "qemu" "lvm" {
                     "${var.ssh_username}<down>joebot01<down>${var.ssh_username}<down>${var.ssh_password}<down>${var.ssh_password}<down><enter><wait5>", # setup account
                     "<enter><tab><tab><enter><wait5>", # Enable OpenSSH
                     "<tab><enter><wait5>", # don't install any dang snaps
+
+                    # If you're trying to do the desktop installer
+                    #"<leftSuper><wait5>", # Bring up the default launcher
+                    #"Install<wait5> Ubuntu 18<enter><wait10>", # Select then start up the installer
+                    #"<enter><wait5>", # Select English language
+                    #"<enter><wait5>", # Keyboard layout (English (US))
+                    #"<down><tab><tab><tab><tab><tab><enter><wait5>", #  Updates & other software (minimal install, download updates)
+                    #"<enter><wait5>", # Installation type (erase disk & install)
+                    #"<tab><tab><tab><enter><wait5>", # Erase disk and install Ubuntu
+                    #"<tab><enter><wait10>", # Write changes to disk confirmation
+                    #"<enter><wait5>", # "Where are you" (aka set timezone/location)
+                    #"Jimmeh Bot<tab>joebot01<tab>${var.ssh_username}<tab>${var.ssh_password}<tab>${var.ssh_password}<tab><up><tab><tab><enter><wait5>", # setup account
+                    #"<wait300>", # Installation...
+                    #"<enter>", # Restart now
                     ]
   boot_wait       = "2s"
   cpus            = 2
@@ -23,6 +36,7 @@ source "qemu" "lvm" {
   iso_checksum    = "file:http://releases.ubuntu.com/bionic/SHA256SUMS"
   iso_target_path = "packer_cache/ubuntu.iso"
   iso_url         = "https://releases.ubuntu.com/bionic/ubuntu-18.04.6-live-server-amd64.iso"
+  #iso_url         = "https://releases.ubuntu.com/18.04/ubuntu-18.04.6-desktop-amd64.iso" # "https://releases.ubuntu.com/bionic/ubuntu-18.04.6-live-server-amd64.iso"
   memory          = 2048
   qemuargs = [
     ["-vga", "qxl"],
@@ -58,9 +72,13 @@ build {
     scripts           = ["${path.root}/scripts/curtin.sh", "${path.root}/scripts/networking.sh", "${path.root}/scripts/cleanup.sh"]
   }
 
-  provisioner "file" {
-    destination = "/home/ubuntu/src"
-    source = "/home/joe/src/sw"
+  provisioner "shell" {
+    inline = [
+        "sudo apt-get install -y git",
+        "ssh-keyscan git.int.n7k.io >> ~/.ssh/known_hosts",
+        "mkdir -p ~/src",
+        "git clone --depth=1 --filter=blob:none git@git.int.n7k.io:neuralink/sw.git ~/src/rSW"
+    ]
   }
 
   post-processor "compress" {
