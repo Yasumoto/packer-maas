@@ -1,17 +1,19 @@
 source "qemu" "lvm" {
-  boot_command    = [
-                    "<wait30>",
-                    "<enter><wait5>", # Don't worry about updating the Subiquity installer
-                    "<enter><wait5>", # Default keyboard layout
-                    "<enter><wait5>", # Default network settings
-                    "<enter><wait5>", # Proxy settings
-                    "<enter><wait5>", # Mirror address
-                    "<down><down><down><down><down><enter><wait5>", #storage layout
-                    "<enter><wait5>", # File System Summary
-                    "<down><enter><wait5>", # Confirm destructive action (aka install the OS)
-                    "${var.ssh_username}<down>joebot01<down>${var.ssh_username}<down>${var.ssh_password}<down>${var.ssh_password}<down><enter><wait5>", # setup account
-                    "<enter><tab><tab><enter><wait5>", # Enable OpenSSH
-                    "<tab><enter><wait5>", # don't install any dang snaps
+  boot_steps    = [
+                    ["<wait30>", "initial startup"],
+                    ["<enter><wait5>", "Don't worry about updating the Subiquity installer"],
+                    ["<enter><wait5>", "Default keyboard layout"],
+                    ["<enter><wait5>", "Default network settings"],
+                    ["<enter><wait5>", "Proxy settings"],
+                    ["<enter><wait5>", "Mirror address"],
+                    ["<enter><wait5>", "Proxy again?"],
+                    ["<down><down><down><down><down><enter><wait5>", "storage layout"],
+                    ["<enter><wait5>", "File System Summary"],
+                    ["<down><enter><wait5>", "Confirm destructive action (aka install the OS)"],
+                    ["${var.ssh_username}<down>joebot01<down>${var.ssh_username}<down>${var.ssh_password}<down>${var.ssh_password}<down><enter><wait5>", "setup account"],
+                    ["<enter><tab><tab><enter><wait5>", "Enable OpenSSH"],
+                    ["<tab><enter><wait5>", "don't install any dang snaps"],
+                    ["<wait300><tab><tab><enter>", "Hopefully the system installed!"],
 
                     # If you're trying to do the desktop installer
                     #"<leftSuper><wait5>", # Bring up the default launcher
@@ -67,18 +69,9 @@ build {
 
   provisioner "shell" {
     environment_vars  = ["HOME_DIR=/home/ubuntu", "http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
-    execute_command   = "echo 'ubuntu' | {{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
+    execute_command   = "echo '${var.ssh_password}' | {{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
     expect_disconnect = true
-    scripts           = ["${path.root}/scripts/curtin.sh", "${path.root}/scripts/networking.sh", "${path.root}/scripts/cleanup.sh"]
-  }
-
-  provisioner "shell" {
-    inline = [
-        "sudo apt-get install -y git",
-        "ssh-keyscan git.int.n7k.io >> ~/.ssh/known_hosts",
-        "mkdir -p ~/src",
-        "git clone --depth=1 --filter=blob:none git@git.int.n7k.io:neuralink/sw.git ~/src/rSW"
-    ]
+    scripts           = ["${path.root}/scripts/curtin.sh", "${path.root}/scripts/networking.sh", "${path.root}/scripts/robot-ansible-provision.sh", "${path.root}/scripts/cleanup.sh"]
   }
 
   post-processor "compress" {
